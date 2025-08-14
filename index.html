@@ -3,36 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Google Trends 足球分类（cat=294）</title>
+  <title>Google Trends: Soccer（cat=294）</title>
   <style>
-    body { margin:0; padding:20px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#fafafa; }
-    h1 { font-size:18px; margin:0 0 12px; }
-    #panel { min-height: 460px; }
+    /* 更紧凑的自适应布局 */
+    body{
+      margin:0;
+      padding:10px;                             /* 缩小整体留白 */
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:#fafafa; color:#222;
+    }
+    h1{
+      font-size:clamp(14px,2.4vw,18px);         /* 自适应标题字号 */
+      margin:0 0 8px;                           /* 减少标题下间距 */
+      line-height:1.25;
+    }
+    #panel{
+      width:100%;
+    }
+    /* 强制让 Trends 内嵌的 iframe 自适应父容器高度与宽度
+       高度在 300px 到 560px 之间，按视口高度动态伸缩 */
+    #panel iframe{
+      width:100% !important;
+      height:clamp(300px, 62vh, 560px) !important;
+      border:0;
+      display:block;
+    }
+
+    /* 小屏进一步收紧顶部留白 */
+    @media (max-width:640px){
+      body{ padding:8px; }
+      h1{ margin-bottom:6px; }
+    }
   </style>
 </head>
 <body>
   <h1 id="title"></h1>
   <div id="panel"></div>
 
+  <!-- 官方加载器，只加载一次 -->
   <script src="https://ssl.gstatic.com/trends_nrtr/4116_RC01/embed_loader.js"></script>
   <script>
-    // 读取 URL 参数
-    const qs = new URLSearchParams(location.search);
-    const geo  = qs.get("geo")  || "US";       // 默认美国
-    const date = qs.get("date") || "now 7-d";  // 默认近 7 天
-    const hl   = qs.get("hl")   || "zh-CN";    // 默认中文界面
+    // 读取 URL 参数：固定足球分类（cat=294），仅 geo/date/hl 可变
+    const qs   = new URLSearchParams(location.search);
+    const geo  = qs.get("geo")  || "US";        // 国家/地区代码
+    const date = qs.get("date") || "now 7-d";   // 时间范围（如 "now 7-d"、"today 1-m"）
+    const hl   = qs.get("hl")   || "zh-CN";     // 界面语言
 
-    // 设置标题
-    document.getElementById("title").textContent = `${geo} · ${date} · 足球分类（cat=294）`;
+    // 设置标题展示
+    document.getElementById("title").textContent =
+      `${geo} · ${date} · 足球分类（cat=294）`;
 
-    // 构造 exploreQuery
-    const exploreQuery = `cat=294&date=${encodeURIComponent(date)}&geo=${encodeURIComponent(geo)}&hl=${encodeURIComponent(hl)}`;
+    // 构造 exploreQuery（保持与你成功版本一致的参数结构）
+    const exploreQuery =
+      `cat=294&date=${encodeURIComponent(date)}&geo=${encodeURIComponent(geo)}&hl=${encodeURIComponent(hl)}&cmpt=q&gprop=`;
 
-    // 渲染嵌入
+    // 渲染 RELATED_QUERIES（热门/相关查询榜单）
     trends.embed.renderExploreWidget(
       "RELATED_QUERIES",
       { "comparisonItem":[{ "geo": geo, "time": date }], "category": 294, "property": "" },
-      { "exploreQuery": exploreQuery, "guestPath": "https://trends.google.com:443/trends/embed/" },
+      { "exploreQuery": exploreQuery,
+        "guestPath": "https://trends.google.com/trends/embed/" },   // 不带 :443，更稳
       document.getElementById("panel")
     );
   </script>
