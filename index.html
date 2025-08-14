@@ -2,62 +2,75 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Google Trends 卡片（无滚动条通用版）</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Google Trends 足球分类（cat=294）</title>
   <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      background: #fafafa;
-    }
-    h1 {
-      font-size: 20px;
-      margin-bottom: 16px;
-    }
-    #trends-card {
-      width: 100%;
-      height: 600px; /* 高度加大以避免滚动条，可按需调整 */
-      border: none;
+    body{margin:0;padding:10px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#fafafa;color:#222}
+    h1{font-size:clamp(16px,2.2vw,20px);margin:0 0 8px;line-height:1.25}
+    #panel{width:100%}
+    /* 给足高度以避免内部滚动条 */
+    #panel iframe{
+      width:100% !important;
+      height:clamp(320px,72vh,760px) !important; /* 未指定 h= 时的默认高度 */
+      border:0;display:block
     }
   </style>
 </head>
 <body>
-  <h1 id="title">加载中...</h1>
+  <h1 id="title">加载中…</h1>
+  <div id="panel"></div>
 
-  <!-- Google Trends 官方脚本 -->
-  <script type="text/javascript" src="https://ssl.gstatic.com/trends_nrtr/4116_RC01/embed_loader.js"></script>
-  <div id="trends-widget"></div>
-
+  <script src="https://ssl.gstatic.com/trends_nrtr/4116_RC01/embed_loader.js"></script>
   <script>
-    // ======= 配置参数 =======
-    const geo = "US";                // 国家代码（US=美国, NL=荷兰, ES=西班牙 等）
-    const timeRange = "now 7-d";     // 时间范围（now 7-d / today 1-m / today 3-m / today 12-m）
-    const category = 294;            // 分类（294=足球）
-    const hl = "zh-CN";              // 界面语言（zh-CN, en-US 等）
-    const chartType = "RELATED_QUERIES"; // 卡片类型（RELATED_QUERIES / TIMESERIES 等）
+    // 读取 URL 参数（示例：?geo=CA&date=today%203-m&hl=zh-CN&compact=1&h=600）
+    const qs   = new URLSearchParams(location.search);
+    const geo  = (qs.get("geo")  || "US").trim();
+    const date = (qs.get("date") || "now 7-d").trim();
+    const hl   = (qs.get("hl")   || "zh-CN").trim();
+    const h    = qs.get("h");                // 可选：固定高度（像素）
+    const compact = qs.get("compact")==="1"; // 可选：隐藏标题
 
-    // ======= 自动生成标题 =======
-    const displayDateMap = {
-      "now 7-d": "近 7 天",
-      "today 1-m": "近 1 个月",
-      "today 3-m": "近 3 个月",
-      "today 12-m": "近 12 个月"
-    };
-    const displayDate = displayDateMap[timeRange] || timeRange;
-    const todayStr = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+    // 固定足球分类
+    const CAT = 294;
 
-    document.getElementById("title").textContent =
-      `${geo} ${displayDate} 足球分类 ${todayStr}`;
+    // 友好时间文案
+    const dateLabel = ({
+      "now 1-H":"近 1 小时","now 4-H":"近 4 小时","now 1-d":"近 1 天",
+      "now 7-d":"近 7 天","today 1-m":"近 1 个月","today 3-m":"近 3 个月",
+      "today 12-m":"近 12 个月","all":"全部时间"
+    })[date] || date;
 
-    // ======= 嵌入 Google Trends =======
+    // 今日日期 YYYY-MM-DD
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+    // 标题：US 近 7 天 足球分类 2025-08-14
+    const titleEl = document.getElementById("title");
+    titleEl.textContent = `${geo} ${dateLabel} 足球分类 ${todayStr}`;
+    if (compact) titleEl.style.display = "none";
+
+    // 渲染 Trends
+    const exploreQuery =
+      `cat=${CAT}&date=${encodeURIComponent(date)}&geo=${encodeURIComponent(geo)}&hl=${encodeURIComponent(hl)}&cmpt=q&gprop=`;
+
     trends.embed.renderExploreWidget(
-      chartType,
-      { "comparisonItem": [{ "geo": geo, "time": timeRange }], "category": category, "property": "" },
-      { "exploreQuery": `cat=${category}&date=${encodeURIComponent(timeRange)}&geo=${geo}&hl=${hl}`,
-        "guestPath": "https://trends.google.com/trends/embed/" },
-      document.getElementById("trends-widget")
+      "RELATED_QUERIES",
+      { "comparisonItem":[{ "geo": geo, "time": date }], "category": CAT, "property": "" },
+      { "exploreQuery": exploreQuery, "guestPath": "https://trends.google.com/trends/embed/" },
+      document.getElementById("panel")
     );
+
+    // 如果通过 h= 指定了高度，强制应用以彻底去除滚动条
+    if (h) {
+      const applyHeight = () => {
+        const ifr = document.querySelector("#panel iframe");
+        if (ifr) ifr.style.height = `${Math.max(220, Math.min(1200, parseInt(h,10)||0))}px`;
+      };
+      // 初次渲染后可能异步插入 iframe，监听一次
+      new MutationObserver((m,obs)=>{ applyHeight(); obs.disconnect(); })
+        .observe(document.getElementById("panel"), {childList:true,subtree:true});
+      window.addEventListener("resize", applyHeight);
+    }
   </script>
 </body>
 </html>
