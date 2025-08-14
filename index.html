@@ -3,36 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Google Trends: Soccer（cat=294）</title>
+  <title>Google Trends 足球分类（cat=294）</title>
   <style>
-    /* 更紧凑的自适应布局 */
+    /* ① 全局极简与自适应 */
+    :root{ --pad:8px; --h:auto; }
+    html,body{ height:100%; }
     body{
-      margin:0;
-      padding:10px;                             /* 缩小整体留白 */
+      margin:0; padding:var(--pad);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
       background:#fafafa; color:#222;
     }
+    /* ② 可选标题（compact=1 时隐藏） */
     h1{
-      font-size:clamp(14px,2.4vw,18px);         /* 自适应标题字号 */
-      margin:0 0 8px;                           /* 减少标题下间距 */
-      line-height:1.25;
+      font-size:clamp(14px,2.2vw,17px);
+      margin:0 0 6px; line-height:1.2;
     }
-    #panel{
-      width:100%;
-    }
-    /* 强制让 Trends 内嵌的 iframe 自适应父容器高度与宽度
-       高度在 300px 到 560px 之间，按视口高度动态伸缩 */
+    /* ③ 容器尽量占满，减少空白 */
+    #panel{ width:100%; }
+    /* ④ 强制 Trends 内部 iframe 紧凑显示（用 CSS 变量 --h 控制高度） */
     #panel iframe{
       width:100% !important;
-      height:clamp(300px, 62vh, 560px) !important;
-      border:0;
-      display:block;
+      height:var(--h) !important;      /* 由 JS 计算/或 h= 参数控制 */
+      min-height:260px;                 /* 兜底，防止太矮 */
+      max-height:680px;                 /* 避免超高 */
+      border:0; display:block;
     }
-
-    /* 小屏进一步收紧顶部留白 */
+    /* 移动端再收紧一点内边距 */
     @media (max-width:640px){
-      body{ padding:8px; }
-      h1{ margin-bottom:6px; }
+      :root{ --pad:6px; }
     }
   </style>
 </head>
@@ -43,28 +41,57 @@
   <!-- 官方加载器，只加载一次 -->
   <script src="https://ssl.gstatic.com/trends_nrtr/4116_RC01/embed_loader.js"></script>
   <script>
-    // 读取 URL 参数：固定足球分类（cat=294），仅 geo/date/hl 可变
     const qs   = new URLSearchParams(location.search);
-    const geo  = qs.get("geo")  || "US";        // 国家/地区代码
-    const date = qs.get("date") || "now 7-d";   // 时间范围（如 "now 7-d"、"today 1-m"）
-    const hl   = qs.get("hl")   || "zh-CN";     // 界面语言
+    const geo  = qs.get("geo")  || "US";
+    const date = qs.get("date") || "now 7-d";
+    const hl   = qs.get("hl")   || "zh-CN";
+    const compact = qs.get("compact") === "1";
+    const hParam  = qs.get("h");   // 像素值，例如 360
 
-    // 设置标题展示
-    document.getElementById("title").textContent =
-      `${geo} · ${date} · 足球分类（cat=294）`;
+    // 计算目标高度：优先 h= 像素；否则用视口 62% 夹在 260~620 之间
+    const targetH = hParam
+      ? Math.max(220, Math.min(900, parseInt(hParam,10))) + "px"
+      : Math.max(260, Math.min(620, Math.round(window.innerHeight * 0.62))) + "px";
 
-    // 构造 exploreQuery（保持与你成功版本一致的参数结构）
+    // 应用高度到 CSS 变量
+    document.documentElement.style.setProperty("--h", targetH);
+
+    // 标题：compact=1 则隐藏
+    const title = document.getElementById("title");
+    title.textContent = `${geo} · ${date} · 足球分类（cat=294）`;
+    if (compact) title.style.display = "none";
+
+    // 渲染（保持你之前成功的参数结构）
     const exploreQuery =
       `cat=294&date=${encodeURIComponent(date)}&geo=${encodeURIComponent(geo)}&hl=${encodeURIComponent(hl)}&cmpt=q&gprop=`;
+    const guestPath = "https://trends.google.com/trends/embed/";
 
-    // 渲染 RELATED_QUERIES（热门/相关查询榜单）
     trends.embed.renderExploreWidget(
       "RELATED_QUERIES",
       { "comparisonItem":[{ "geo": geo, "time": date }], "category": 294, "property": "" },
-      { "exploreQuery": exploreQuery,
-        "guestPath": "https://trends.google.com/trends/embed/" },   // 不带 :443，更稳
+      { "exploreQuery": exploreQuery, "guestPath": guestPath },
       document.getElementById("panel")
     );
+
+    // 再保险：等 iframe 插入后再强制一次高度，避免偶尔出现内边距撑高
+    const mo = new MutationObserver(() => {
+      const ifr = document.querySelector("#panel iframe");
+      if (ifr) {
+        ifr.style.height = getComputedStyle(document.documentElement).getPropertyValue("--h");
+        mo.disconnect();
+      }
+    });
+    mo.observe(document.getElementById("panel"), { childList:true, subtree:true });
+
+    // 视口变化时同步高度（比如切换 Notion 面板尺寸）
+    window.addEventListener("resize", () => {
+      if (!hParam) { // 仅在未显式指定 h 时自适应
+        const h = Math.max(260, Math.min(620, Math.round(window.innerHeight * 0.62))) + "px";
+        document.documentElement.style.setProperty("--h", h);
+        const ifr = document.querySelector("#panel iframe");
+        if (ifr) ifr.style.height = h;
+      }
+    });
   </script>
 </body>
 </html>
