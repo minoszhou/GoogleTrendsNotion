@@ -3,95 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Google Trends 足球分类（cat=294）</title>
+  <title>Google Trends · 无滚动条通用版</title>
   <style>
-    /* ① 全局极简与自适应 */
-    :root{ --pad:8px; --h:auto; }
-    html,body{ height:100%; }
-    body{
-      margin:0; padding:var(--pad);
+    body {
+      margin:0;
+      padding:20px;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      background:#fafafa; color:#222;
+      background:#fafafa;
     }
-    /* ② 可选标题（compact=1 时隐藏） */
-    h1{
-      font-size:clamp(14px,2.2vw,17px);
-      margin:0 0 6px; line-height:1.2;
+    h1 {
+      font-size:18px;
+      margin:0 0 12px;
     }
-    /* ③ 容器尽量占满，减少空白 */
-    #panel{ width:100%; }
-    /* ④ 强制 Trends 内部 iframe 紧凑显示（用 CSS 变量 --h 控制高度） */
-    #panel iframe{
+    /* 调高 iframe 高度，避免滚动条 */
+    iframe {
       width:100% !important;
-      height:var(--h) !important;      /* 由 JS 计算/或 h= 参数控制 */
-      min-height:260px;                 /* 兜底，防止太矮 */
-      max-height:680px;                 /* 避免超高 */
-      border:0; display:block;
-    }
-    /* 移动端再收紧一点内边距 */
-    @media (max-width:640px){
-      :root{ --pad:6px; }
+      height:clamp(320px, 72vh, 760px) !important;
+      border:0;
+      display:block;
     }
   </style>
 </head>
 <body>
-  <h1 id="title"></h1>
-  <div id="panel"></div>
 
-  <!-- 官方加载器，只加载一次 -->
+  <h1>Google Trends 卡片（无滚动条通用版）</h1>
+
   <script src="https://ssl.gstatic.com/trends_nrtr/4116_RC01/embed_loader.js"></script>
   <script>
-    const qs   = new URLSearchParams(location.search);
-    const geo  = qs.get("geo")  || "US";
-    const date = qs.get("date") || "now 7-d";
-    const hl   = qs.get("hl")   || "zh-CN";
-    const compact = qs.get("compact") === "1";
-    const hParam  = qs.get("h");   // 像素值，例如 360
-
-    // 计算目标高度：优先 h= 像素；否则用视口 62% 夹在 260~620 之间
-    const targetH = hParam
-      ? Math.max(220, Math.min(900, parseInt(hParam,10))) + "px"
-      : Math.max(260, Math.min(620, Math.round(window.innerHeight * 0.62))) + "px";
-
-    // 应用高度到 CSS 变量
-    document.documentElement.style.setProperty("--h", targetH);
-
-    // 标题：compact=1 则隐藏
-    const title = document.getElementById("title");
-    title.textContent = `${geo} · ${date} · 足球分类（cat=294）`;
-    if (compact) title.style.display = "none";
-
-    // 渲染（保持你之前成功的参数结构）
-    const exploreQuery =
-      `cat=294&date=${encodeURIComponent(date)}&geo=${encodeURIComponent(geo)}&hl=${encodeURIComponent(hl)}&cmpt=q&gprop=`;
-    const guestPath = "https://trends.google.com/trends/embed/";
-
     trends.embed.renderExploreWidget(
       "RELATED_QUERIES",
-      { "comparisonItem":[{ "geo": geo, "time": date }], "category": 294, "property": "" },
-      { "exploreQuery": exploreQuery, "guestPath": guestPath },
-      document.getElementById("panel")
+      { "comparisonItem":[{ "geo":"US", "time":"now 7-d" }], "category":294, "property":"" },
+      { "exploreQuery":"cat=294&date=now%207-d&geo=US&hl=zh-CN&cmpt=q&gprop=",
+        "guestPath":"https://trends.google.com/trends/embed/" }
     );
-
-    // 再保险：等 iframe 插入后再强制一次高度，避免偶尔出现内边距撑高
-    const mo = new MutationObserver(() => {
-      const ifr = document.querySelector("#panel iframe");
-      if (ifr) {
-        ifr.style.height = getComputedStyle(document.documentElement).getPropertyValue("--h");
-        mo.disconnect();
-      }
-    });
-    mo.observe(document.getElementById("panel"), { childList:true, subtree:true });
-
-    // 视口变化时同步高度（比如切换 Notion 面板尺寸）
-    window.addEventListener("resize", () => {
-      if (!hParam) { // 仅在未显式指定 h 时自适应
-        const h = Math.max(260, Math.min(620, Math.round(window.innerHeight * 0.62))) + "px";
-        document.documentElement.style.setProperty("--h", h);
-        const ifr = document.querySelector("#panel iframe");
-        if (ifr) ifr.style.height = h;
-      }
-    });
   </script>
+
 </body>
 </html>
