@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Google Trends 足球分类（cat=294）</title>
+  <style>
+    body { margin:0; padding:20px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#fafafa; }
+    h1 { font-size:18px; margin:0 0 12px; }
+    #panel { min-height: 460px; }
+  </style>
+</head>
+<body>
+  <h1 id="title"></h1>
+  <div id="panel"></div>
+
+  <script src="https://ssl.gstatic.com/trends_nrtr/4116_RC01/embed_loader.js"></script>
+  <script>
+    // 读取 URL 参数
+    const qs = new URLSearchParams(location.search);
+    const geo  = qs.get("geo")  || "US";       // 默认美国
+    const date = qs.get("date") || "now 7-d";  // 默认近 7 天
+    const hl   = qs.get("hl")   || "zh-CN";    // 默认中文界面
+
+    // 设置标题
+    document.getElementById("title").textContent = `${geo} · ${date} · 足球分类（cat=294）`;
+
+    // 构造 exploreQuery
+    const exploreQuery = `cat=294&date=${encodeURIComponent(date)}&geo=${encodeURIComponent(geo)}&hl=${encodeURIComponent(hl)}`;
+
+    // 渲染嵌入
+    trends.embed.renderExploreWidget(
+      "RELATED_QUERIES",
+      { "comparisonItem":[{ "geo": geo, "time": date }], "category": 294, "property": "" },
+      { "exploreQuery": exploreQuery, "guestPath": "https://trends.google.com:443/trends/embed/" },
+      document.getElementById("panel")
+    );
+  </script>
+</body>
+</html>
