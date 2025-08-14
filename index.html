@@ -2,41 +2,62 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Google Trends · 无滚动条通用版</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Google Trends 卡片（无滚动条通用版）</title>
   <style>
     body {
-      margin:0;
-      padding:20px;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      background:#fafafa;
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: #fafafa;
     }
     h1 {
-      font-size:18px;
-      margin:0 0 12px;
+      font-size: 20px;
+      margin-bottom: 16px;
     }
-    /* 调高 iframe 高度，避免滚动条 */
-    iframe {
-      width:100% !important;
-      height:clamp(320px, 72vh, 760px) !important;
-      border:0;
-      display:block;
+    #trends-card {
+      width: 100%;
+      height: 600px; /* 高度加大以避免滚动条，可按需调整 */
+      border: none;
     }
   </style>
 </head>
 <body>
+  <h1 id="title">加载中...</h1>
 
-  <h1>Google Trends 卡片（无滚动条通用版）</h1>
+  <!-- Google Trends 官方脚本 -->
+  <script type="text/javascript" src="https://ssl.gstatic.com/trends_nrtr/4116_RC01/embed_loader.js"></script>
+  <div id="trends-widget"></div>
 
-  <script src="https://ssl.gstatic.com/trends_nrtr/4116_RC01/embed_loader.js"></script>
   <script>
+    // ======= 配置参数 =======
+    const geo = "US";                // 国家代码（US=美国, NL=荷兰, ES=西班牙 等）
+    const timeRange = "now 7-d";     // 时间范围（now 7-d / today 1-m / today 3-m / today 12-m）
+    const category = 294;            // 分类（294=足球）
+    const hl = "zh-CN";              // 界面语言（zh-CN, en-US 等）
+    const chartType = "RELATED_QUERIES"; // 卡片类型（RELATED_QUERIES / TIMESERIES 等）
+
+    // ======= 自动生成标题 =======
+    const displayDateMap = {
+      "now 7-d": "近 7 天",
+      "today 1-m": "近 1 个月",
+      "today 3-m": "近 3 个月",
+      "today 12-m": "近 12 个月"
+    };
+    const displayDate = displayDateMap[timeRange] || timeRange;
+    const todayStr = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+
+    document.getElementById("title").textContent =
+      `${geo} ${displayDate} 足球分类 ${todayStr}`;
+
+    // ======= 嵌入 Google Trends =======
     trends.embed.renderExploreWidget(
-      "RELATED_QUERIES",
-      { "comparisonItem":[{ "geo":"US", "time":"now 7-d" }], "category":294, "property":"" },
-      { "exploreQuery":"cat=294&date=now%207-d&geo=US&hl=zh-CN&cmpt=q&gprop=",
-        "guestPath":"https://trends.google.com/trends/embed/" }
+      chartType,
+      { "comparisonItem": [{ "geo": geo, "time": timeRange }], "category": category, "property": "" },
+      { "exploreQuery": `cat=${category}&date=${encodeURIComponent(timeRange)}&geo=${geo}&hl=${hl}`,
+        "guestPath": "https://trends.google.com/trends/embed/" },
+      document.getElementById("trends-widget")
     );
   </script>
-
 </body>
 </html>
